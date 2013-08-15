@@ -8,7 +8,12 @@ public class BoardScript : MonoBehaviour {
 	public GameObject brickPrefab;
 	public Vector3 StartVector= new Vector3(-4.5F,-7F,10F);
 	public int matchingBrickCounter;
-
+	public float hintTimer;
+	
+	void Awake(){
+		hintTimer = Time.time;
+	}
+	
 	void Start () {
 		bricks = new GameObject[10,10];
 		brickClass = new BrickClass[10,10];
@@ -20,18 +25,25 @@ public class BoardScript : MonoBehaviour {
 		}
 	}
 	
+	void OnGUI(){
+		if(GUI.Button(new Rect(50,50,50,50),"Print")){
+			PrintBlocks();
+		}
+		if(GUI.Button(new Rect(50,100,50,50),"Restart")){
+			Application.LoadLevel(Application.loadedLevel);
+		}
+	}
+	
 	void Update () {
 	
 		if(Input.GetMouseButtonDown(0)){
 			Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 			RaycastHit hit;
 			if(Physics.Raycast(ray,out hit)){
-				Debug.Log (hit.transform.position-StartVector);
 				if(hit.transform.gameObject.name=="Brick(Clone)"){
-					Vector3 hitObject=hit.transform.position-StartVector;
-					Debug.Log (hitObject);
-					MatchAlgorithm(Mathf.FloorToInt(hitObject.x),Mathf.FloorToInt(hitObject.y)+1);
-					Debug.Log (matchingBrickCounter);
+					Vector3 hitObject=hit.transform.position-StartVector;					
+					MatchAlgorithm(Mathf.FloorToInt(hitObject.x),Mathf.FloorToInt(hitObject.y));
+					//Debug.Log ("Brick Counter:"+matchingBrickCounter+"transform position: "+hitObject);
 					if(matchingBrickCounter>=3){
 						for (int it1=0;it1<10;it1++){
 							for(int it2=0;it2<10;it2++){
@@ -39,8 +51,6 @@ public class BoardScript : MonoBehaviour {
 									if(brickClass[it1,it2].toBeDestroyed==true){
 										Destroy (bricks[it1,it2]);
 										bricks[it1,it2]=null;
-										Destroy (brickClass[it1,it2]);
-										brickClass[it1,it2]=null;
 									}
 								}
 							}
@@ -50,6 +60,7 @@ public class BoardScript : MonoBehaviour {
 							MoveBlocks(it1);
 						}
 						Reinstantiate();
+						ResetBlockClasses();
 						PrintBlocks();
 						//Move 
 						//Reinstantiate
@@ -81,21 +92,33 @@ public class BoardScript : MonoBehaviour {
 		return false;
 	}
 	
+	void ResetBlockClasses(){
+		Debug.Log ("Resetting");
+		for(int it1=0;it1<10;it1++){
+			for(int it2=0;it2<10;it2++){
+				brickClass[it1,it2]=bricks[it1,it2].GetComponent<BrickClass>();
+			}
+		}
+	}
+	
 	void MoveBlocks(int brickPositionX){
 		GameObject auxGameObject;
-		BrickClass auxBrickClass;
 		for(int it1=0;it1<9;it1++){
 			if(bricks[brickPositionX,it1]==null){
 				for(int it2=it1;it2<10;it2++){
 					if(bricks[brickPositionX,it2]!=null){
-						auxGameObject=bricks[brickPositionX,it1];
-						auxBrickClass=brickClass[brickPositionX,it1];
-						bricks[brickPositionX,it1]=bricks[brickPositionX,it2];
-						brickClass[brickPositionX,it1]=brickClass[brickPositionX,it2];
+						auxGameObject=bricks[brickPositionX,it1];						
+						bricks[brickPositionX,it1]=bricks[brickPositionX,it2];					
 						bricks[brickPositionX,it2]=auxGameObject;
-						brickClass[brickPositionX,it2]=auxBrickClass;
 						it2=10;
 					}
+				}
+			}
+		}
+		for(int it1=0;it1<10;it1++){
+			if(bricks[brickPositionX,it1]!=null){
+				while(bricks[brickPositionX,it1].transform.position.y!=it1-7.0F){
+					bricks[brickPositionX,it1].transform.Translate(0F,-0.125F,0F);
 				}
 			}
 		}
@@ -149,8 +172,7 @@ public class BoardScript : MonoBehaviour {
 			for(int it1=0;it1<10;it1++){
 				for(int it2=0;it2<10;it2++){
 					if(bricks[it1,it2]==null){
-						bricks[it1,it2]=Instantiate (brickPrefab,new Vector3(-4.5F+it1,-5F+it2,10F),Quaternion.identity) as GameObject;
-						brickClass[it1,it2]=bricks[it1,it2].GetComponent<BrickClass>();
+						bricks[it1,it2]=Instantiate (brickPrefab,new Vector3(-4.5F+it1,-7F+it2,10F),Quaternion.identity) as GameObject;
 					}
 				}
 			}
