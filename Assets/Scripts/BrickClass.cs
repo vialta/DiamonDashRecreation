@@ -14,7 +14,7 @@ public class BrickClass : MonoBehaviour {
 	}
 	
 	void Update () {
-	
+		
 	}
 	
 }
