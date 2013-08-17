@@ -8,7 +8,19 @@ public class BoardScript : MonoBehaviour {
 	public GameObject brickPrefab;
 	public Vector3 StartVector= new Vector3(-4.5F,-7F,10F);
 	public int matchingBrickCounter;
+	public ParticleSystem hintParticles;
+	
+	public int score=0;
+	
+	public bool toScramble=false;
+	public bool hintsUpdated=false;
+	
+	public float respawnPosition;
 	public float hintTimer;
+	public float scrambleTimer;
+	public float startTimer=60f;
+	
+	public ArrayList hints = new ArrayList();
 	
 	void Awake(){
 		hintTimer = Time.time;
@@ -17,12 +29,7 @@ public class BoardScript : MonoBehaviour {
 	void Start () {
 		bricks = new GameObject[10,10];
 		brickClass = new BrickClass[10,10];
-		for (int it1=0;it1<10;it1++){
-			for(int it2=0;it2<10;it2++){
-				bricks[it1,it2]=Instantiate (brickPrefab,new Vector3(-4.5F+it1,-7F+it2,10F),Quaternion.identity) as GameObject;
-				brickClass[it1,it2]=bricks[it1,it2].GetComponent<BrickClass>();
-			}
-		}
+		BuildBoard ();		
 	}
 	
 	void OnGUI(){
@@ -32,53 +39,17 @@ public class BoardScript : MonoBehaviour {
 		if(GUI.Button(new Rect(50,100,50,50),"Restart")){
 			Application.LoadLevel(Application.loadedLevel);
 		}
+		GUI.Label(new Rect(700,50,50,50),(startTimer-Time.time).ToString("#"));
 	}
 	
 	void Update () {
-	
+		CheckForMovement();
+		UpdateHintArray();
 		if(Input.GetMouseButtonDown(0)){
-			Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-			RaycastHit hit;
-			if(Physics.Raycast(ray,out hit)){
-				if(hit.transform.gameObject.name=="Brick(Clone)"){
-					Vector3 hitObject=hit.transform.position-StartVector;					
-					MatchAlgorithm(Mathf.FloorToInt(hitObject.x),Mathf.FloorToInt(hitObject.y));
-					//Debug.Log ("Brick Counter:"+matchingBrickCounter+"transform position: "+hitObject);
-					if(matchingBrickCounter>=3){
-						for (int it1=0;it1<10;it1++){
-							for(int it2=0;it2<10;it2++){
-								if(brickClass[it1,it2]!=null){						
-									if(brickClass[it1,it2].toBeDestroyed==true){
-										Destroy (bricks[it1,it2]);
-										bricks[it1,it2]=null;
-									}
-								}
-							}
-						}
-						
-						for(int it1=0;it1<10;it1++){
-							MoveBlocks(it1);
-						}
-						Reinstantiate();
-						ResetBlockClasses();
-						PrintBlocks();
-						//Move 
-						//Reinstantiate
-					}
-					else{
-						for (int it1=0;it1<10;it1++){
-							for(int it2=0;it2<10;it2++){
-								brickClass[it1,it2].toBeDestroyed=false;
-								brickClass[it1,it2].hasBeenChecked=false;
-							}
-						}
-					}
-					matchingBrickCounter=0;
-				}
-			}		
+			ClickMouseAction();
 		}
-		
-		
+		CheckShowHint();
+		CheckForSolution();
 	}
 	
 	bool CheckForNull(){
@@ -90,6 +61,126 @@ public class BoardScript : MonoBehaviour {
 			}
 		}
 		return false;
+	}
+	
+	void CheckShowHint(){
+		if(Time.time-hintTimer>=3.0f){
+			if(!hintParticles.isPlaying){
+				GameObject r = hints[Random.Range (0,hints.Count)] as GameObject;
+				hintParticles.transform.position=r.transform.position;
+				hintParticles.Play();
+			}
+		}
+	}
+	
+	void CheckForSolution(){
+		if(hints.Count==0&&!toScramble){
+			scrambleTimer=Time.time;
+			toScramble=true;
+		}
+		if(toScramble){
+			if(Time.time-scrambleTimer<1.0f){
+				ScrambleBoard();
+			}
+			else{
+				toScramble=false;
+				hintsUpdated=false;
+			}
+		}
+	}
+	
+	void ClearBoard(){
+		for (int it1=0;it1<10;it1++){
+			for(int it2=0;it2<10;it2++){
+				Destroy(bricks[it1,it2]);
+				Destroy(brickClass[it1,it2]);
+			}
+		}
+	}
+	
+	void BuildBoard(){
+		for (int it1=0;it1<10;it1++){
+			for(int it2=0;it2<10;it2++){
+				bricks[it1,it2]=Instantiate (brickPrefab,new Vector3(-4.5F+it1,-7F+it2,10F),Quaternion.identity) as GameObject;
+				brickClass[it1,it2]=bricks[it1,it2].GetComponent<BrickClass>();
+			}
+		}
+		hintsUpdated=false;
+	}
+	
+	void ScrambleBoard(){
+		for (int it1=0;it1<10;it1++){
+			for(int it2=0;it2<10;it2++){
+				brickClass[it1,it2].RandomBrickValue();
+			}
+		}
+	}
+	
+	void UpdateHintArray(){
+		if(!hintsUpdated){
+			hints.Clear();
+			for(int it1=0;it1<10;it1++){
+				for(int it2=0;it2<10;it2++){
+					matchingBrickCounter=0;
+					MatchAlgorithm(it1,it2,false);	
+					if(matchingBrickCounter>=3){
+						hints.Add(bricks[it1,it2]);
+					}
+				}
+			}
+			hintsUpdated=true;
+			Debug.Log ("Count: "+hints.Count);
+		}
+		matchingBrickCounter=0;
+		for (int it1=0;it1<10;it1++){
+			for(int it2=0;it2<10;it2++){
+				brickClass[it1,it2].toBeDestroyed=false;
+				brickClass[it1,it2].hasBeenChecked=false;
+			}
+		}
+	}
+	
+	void ClickMouseAction(){		
+		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+		RaycastHit hit;
+		if(Physics.Raycast(ray,out hit)){
+			if(hit.transform.gameObject.name=="Brick(Clone)"){
+				Vector3 hitObject=hit.transform.position-StartVector;
+				if(!brickClass[Mathf.FloorToInt(hitObject.x),Mathf.FloorToInt(hitObject.y)].toMove){
+					MatchAlgorithm(Mathf.FloorToInt(hitObject.x),Mathf.FloorToInt(hitObject.y),true);
+					if(matchingBrickCounter>=3){
+						hintTimer=Time.time;
+						hintParticles.Stop();
+						for (int it1=0;it1<10;it1++){
+							for(int it2=0;it2<10;it2++){
+								if(brickClass[it1,it2]!=null){						
+									if(brickClass[it1,it2].toBeDestroyed==true){
+										Destroy (bricks[it1,it2]);
+										bricks[it1,it2]=null;
+									}
+								}
+							}
+						}
+						for(int it1=0;it1<10;it1++){
+							MoveBlocks(it1);
+						}
+						Reinstantiate();
+						ResetBlockClasses();
+						hintsUpdated=false;
+					}
+					else{
+						Debug.Log (matchingBrickCounter);
+						for (int it1=0;it1<10;it1++){
+							for(int it2=0;it2<10;it2++){
+								brickClass[it1,it2].toBeDestroyed=false;
+								brickClass[it1,it2].hasBeenChecked=false;
+							}
+						}
+					}			
+				}
+				matchingBrickCounter=0;
+			}
+		}
 	}
 	
 	void ResetBlockClasses(){
@@ -115,39 +206,46 @@ public class BoardScript : MonoBehaviour {
 				}
 			}
 		}
+	}
+	
+	void CheckForMovement(){
 		for(int it1=0;it1<10;it1++){
-			if(bricks[brickPositionX,it1]!=null){
-				while(bricks[brickPositionX,it1].transform.position.y!=it1-7.0F){
-					bricks[brickPositionX,it1].transform.Translate(0F,-0.125F,0F);
+			for (int it2=0;it2<10;it2++){
+				if(bricks[it1,it2]!=null){
+					if(bricks[it1,it2].transform.position.y!=it2-7.0F){
+						brickClass[it1,it2].toMove=true;
+					}
+					else{
+						brickClass[it1,it2].toMove=false;
+					}
 				}
 			}
 		}
 	}
 	
-	void MatchAlgorithm(int brickPositionX,int brickPositionY){
-		Debug.Log (brickPositionX+" "+brickPositionY);
+	void MatchAlgorithm(int brickPositionX,int brickPositionY,bool clicked){
 		brickClass[brickPositionX,brickPositionY].hasBeenChecked=true;
-		brickClass[brickPositionX,brickPositionY].toBeDestroyed=true;
+		brickClass[brickPositionX,brickPositionY].toBeDestroyed=clicked;
 		matchingBrickCounter+=1;	
 		if(brickPositionX>0){
 			if(brickClass[brickPositionX-1,brickPositionY].hasBeenChecked==false && brickClass[brickPositionX-1,brickPositionY].brickValue==brickClass[brickPositionX,brickPositionY].brickValue){
-				MatchAlgorithm(brickPositionX-1,brickPositionY);
+				MatchAlgorithm(brickPositionX-1,brickPositionY,clicked);
 			}
 			
 		}
 		if(brickPositionX<9){
 			if(brickClass[brickPositionX+1,brickPositionY].hasBeenChecked==false && brickClass[brickPositionX+1,brickPositionY].brickValue==brickClass[brickPositionX,brickPositionY].brickValue){
-				MatchAlgorithm(brickPositionX+1,brickPositionY);
+				MatchAlgorithm(brickPositionX+1,brickPositionY,clicked);
 			}
 		}
 		if(brickPositionY>0){
 			if(brickClass[brickPositionX,brickPositionY-1].hasBeenChecked==false && brickClass[brickPositionX,brickPositionY-1].brickValue==brickClass[brickPositionX,brickPositionY].brickValue){
-				MatchAlgorithm(brickPositionX,brickPositionY-1);
+				MatchAlgorithm(brickPositionX,brickPositionY-1,clicked);
 			}
 		}
 		if(brickPositionY<9){
 			if(brickClass[brickPositionX,brickPositionY+1].hasBeenChecked==false && brickClass[brickPositionX,brickPositionY+1].brickValue==brickClass[brickPositionX,brickPositionY].brickValue){
-				MatchAlgorithm(brickPositionX,brickPositionY+1);
+				MatchAlgorithm(brickPositionX,brickPositionY+1,clicked);
 			}
 		}		
 	}
@@ -172,11 +270,10 @@ public class BoardScript : MonoBehaviour {
 			for(int it1=0;it1<10;it1++){
 				for(int it2=0;it2<10;it2++){
 					if(bricks[it1,it2]==null){
-						bricks[it1,it2]=Instantiate (brickPrefab,new Vector3(-4.5F+it1,-7F+it2,10F),Quaternion.identity) as GameObject;
+						bricks[it1,it2]=Instantiate (brickPrefab,new Vector3(-4.5F+it1,it2-5.0F,10F),Quaternion.identity) as GameObject;
 					}
 				}
 			}
 		}
 	}
-	
 }
