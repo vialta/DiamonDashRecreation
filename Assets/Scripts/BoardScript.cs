@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class BoardScript : MonoBehaviour {
 	
@@ -11,19 +12,25 @@ public class BoardScript : MonoBehaviour {
 	public ParticleSystem hintParticles;
 	
 	public int score=0;
+	public int scoreMultiplier=120;
 	
 	public bool toScramble=false;
 	public bool hintsUpdated=false;
+	public bool timeUp=false;
+	public bool menuOn=true;
 	
 	public float respawnPosition;
 	public float hintTimer;
 	public float scrambleTimer;
-	public float startTimer=60f;
+	public float roundSeconds=60f;
+	public float roundTimer;
+	public float standByTimer=0f;
 	
-	public ArrayList hints = new ArrayList();
+	public List<GameObject> hints = new List<GameObject>();
 	
 	void Awake(){
 		hintTimer = Time.time;
+		roundTimer=roundSeconds-Time.timeSinceLevelLoad+standByTimer;
 	}
 	
 	void Start () {
@@ -37,19 +44,39 @@ public class BoardScript : MonoBehaviour {
 			PrintBlocks();
 		}
 		if(GUI.Button(new Rect(50,100,50,50),"Restart")){
+			Time.timeScale=1;
+			timeUp=false;
 			Application.LoadLevel(Application.loadedLevel);
 		}
-		GUI.Label(new Rect(700,50,50,50),(startTimer-Time.time).ToString("#"));
+		GUI.Label(new Rect(700,50,50,50),(roundTimer).ToString("#"));
+		GUI.Label (new Rect(700,100,50,50),score.ToString());
+		if(timeUp){
+			GUI.Label(new Rect(400,350,100,100),"GAME OVER");
+		}
 	}
 	
 	void Update () {
+		
+		
 		CheckForMovement();
-		UpdateHintArray();
-		if(Input.GetMouseButtonDown(0)){
-			ClickMouseAction();
+		if(roundTimer>0){
+			UpdateHintArray();
+			if(Input.GetMouseButtonDown(0)){
+				ClickMouseAction();
+			}
+			CheckShowHint();
+			CheckForSolution();
+			UpdateRoundTimer();
 		}
-		CheckShowHint();
-		CheckForSolution();
+		else{
+			timeUp=true;
+			Time.timeScale=0;
+		}
+	}
+	
+	void UpdateRoundTimer(){
+		roundTimer=roundSeconds-Time.timeSinceLevelLoad+standByTimer;
+		
 	}
 	
 	bool CheckForNull(){
@@ -66,7 +93,7 @@ public class BoardScript : MonoBehaviour {
 	void CheckShowHint(){
 		if(Time.time-hintTimer>=3.0f){
 			if(!hintParticles.isPlaying){
-				GameObject r = hints[Random.Range (0,hints.Count)] as GameObject;
+				GameObject r = hints[Random.Range (0,hints.Count)];
 				hintParticles.transform.position=r.transform.position;
 				hintParticles.Play();
 			}
@@ -85,6 +112,7 @@ public class BoardScript : MonoBehaviour {
 			else{
 				toScramble=false;
 				hintsUpdated=false;
+				standByTimer+=1.2f;
 			}
 		}
 	}
@@ -167,6 +195,7 @@ public class BoardScript : MonoBehaviour {
 						Reinstantiate();
 						ResetBlockClasses();
 						hintsUpdated=false;
+						score+=matchingBrickCounter*scoreMultiplier;
 					}
 					else{
 						Debug.Log (matchingBrickCounter);
@@ -193,14 +222,14 @@ public class BoardScript : MonoBehaviour {
 	}
 	
 	void MoveBlocks(int brickPositionX){
-		GameObject auxGameObject;
+		GameObject tempGameObject;
 		for(int it1=0;it1<9;it1++){
 			if(bricks[brickPositionX,it1]==null){
 				for(int it2=it1;it2<10;it2++){
 					if(bricks[brickPositionX,it2]!=null){
-						auxGameObject=bricks[brickPositionX,it1];						
+						tempGameObject=bricks[brickPositionX,it1];						
 						bricks[brickPositionX,it1]=bricks[brickPositionX,it2];					
-						bricks[brickPositionX,it2]=auxGameObject;
+						bricks[brickPositionX,it2]=tempGameObject;
 						it2=10;
 					}
 				}
