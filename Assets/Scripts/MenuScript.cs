@@ -7,7 +7,7 @@ public class MenuScript : MonoBehaviour {
 	
 	void Awake(){
 		instance=this;
-		DontDestroyOnLoad(gameObject);
+		
 	}
 	
 	// Use this for initialization

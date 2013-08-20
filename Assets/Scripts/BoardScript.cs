@@ -7,11 +7,11 @@ public class BoardScript : MonoBehaviour {
 	public GameObject[,] bricks;
 	public BrickClass[,] brickClass;
 	public GameObject brickPrefab;
+	public HighScoreScript highScoreScript;
 	public Vector3 StartVector= new Vector3(-4.5F,-7F,10F);
 	public int matchingBrickCounter;
 	public ParticleSystem hintParticles;
 	
-	public int score=0;
 	public int scoreMultiplier=120;
 	
 	public bool toScramble=false;
@@ -22,7 +22,7 @@ public class BoardScript : MonoBehaviour {
 	public float respawnPosition;
 	public float hintTimer;
 	public float scrambleTimer;
-	public float roundSeconds=60f;
+	public float roundSeconds=10f;
 	public float roundTimer;
 	public float standByTimer=0f;
 	
@@ -30,10 +30,13 @@ public class BoardScript : MonoBehaviour {
 	
 	void Awake(){
 		hintTimer = Time.time;
-		roundTimer=roundSeconds-Time.timeSinceLevelLoad+standByTimer;
+		
 	}
 	
 	void Start () {
+		Time.timeScale=1;
+		UpdateRoundTimer();
+		InitialiseScripts();
 		bricks = new GameObject[10,10];
 		brickClass = new BrickClass[10,10];
 		BuildBoard ();		
@@ -44,20 +47,16 @@ public class BoardScript : MonoBehaviour {
 			PrintBlocks();
 		}
 		if(GUI.Button(new Rect(50,100,50,50),"Restart")){
-			Time.timeScale=1;
-			timeUp=false;
-			Application.LoadLevel(Application.loadedLevel);
+			RestartLevel();
 		}
 		GUI.Label(new Rect(700,50,50,50),(roundTimer).ToString("#"));
-		GUI.Label (new Rect(700,100,50,50),score.ToString());
+		GUI.Label (new Rect(700,100,50,50),highScoreScript.score.ToString());
 		if(timeUp){
 			GUI.Label(new Rect(400,350,100,100),"GAME OVER");
 		}
 	}
 	
 	void Update () {
-		
-		
 		CheckForMovement();
 		if(roundTimer>0){
 			UpdateHintArray();
@@ -70,8 +69,35 @@ public class BoardScript : MonoBehaviour {
 		}
 		else{
 			timeUp=true;
-			Time.timeScale=0;
+			if(highScoreScript.checkedTopTen){
+				if(highScoreScript.submitted){
+					highScoreScript.score=0;
+					highScoreScript.askForName=false;
+					highScoreScript.submitted=false;
+					RestartLevel();
+				}
+				else{
+					highScoreScript.askForName=true;
+					Time.timeScale=0;
+				}
+			}
+			else{
+				highScoreScript.CheckNewScore();
+			}
+			
 		}
+	}
+	
+	void InitialiseScripts(){
+		if(highScoreScript==null){
+			highScoreScript=GameObject.Find ("HighScoreObject").GetComponent<HighScoreScript>();
+		}
+	}
+	
+	void RestartLevel(){
+		timeUp=false;
+		standByTimer=0f;
+		Application.LoadLevel(Application.loadedLevel);
 	}
 	
 	void UpdateRoundTimer(){
@@ -195,7 +221,7 @@ public class BoardScript : MonoBehaviour {
 						Reinstantiate();
 						ResetBlockClasses();
 						hintsUpdated=false;
-						score+=matchingBrickCounter*scoreMultiplier;
+						highScoreScript.score+=matchingBrickCounter*scoreMultiplier;
 					}
 					else{
 						Debug.Log (matchingBrickCounter);

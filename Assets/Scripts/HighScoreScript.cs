@@ -3,14 +3,31 @@ using System.Collections;
 
 public class HighScoreScript : MonoBehaviour {
 	
-	public static HighScoreScript instance {get; private set; }
+	internal static bool created=false;
+	public static HighScoreScript instance;
+	
+	public int score=0;
 	
 	public HighScore[] topScores;
+	public HighScore roundScore;
+	
 	public bool askForName;
+	public bool submitted=false;
+	public bool checkedTopTen=false;
+	
+	public static HighScoreScript getInstance(){
+		return instance;
+	}
 	
 	void Awake(){
-		instance=this;
-		DontDestroyOnLoad(gameObject);
+		if(!created){
+			DontDestroyOnLoad(gameObject);
+			created=true;
+			instance=this;
+		}
+		else{
+			Destroy(gameObject);
+		}
 	}
 
 	void Start () {
@@ -27,18 +44,38 @@ public class HighScoreScript : MonoBehaviour {
 	
 	void OnGUI(){
 		if(askForName){
-			topScores[9].name = GUI.TextField(new Rect(400, 10, 200, 20), topScores[9].name , 25);
+			roundScore.name = GUI.TextField(new Rect(400, 10, 200, 20), roundScore.name , 25);
 			if(GUI.Button (new Rect(450,50,80,50),"Submit")){
-				SortScores();
-				askForName=false;
+				roundScore.val=score;
+				NewScore(roundScore);
+				submitted=true;			
 			}
+		}
+		if(GUI.Button(new Rect(150,50,50,50),"Scores")){
+			PrintScores();
 		}
 	}
 	
 	void InitScores(){
+		topScores=new HighScore[10];
 		for(int it1=0;it1<10;it1++){
 			topScores[it1].name="";
 			topScores[it1].val=0;
+		}
+		roundScore = new HighScore();
+		roundScore.name="";
+		roundScore.val=0;
+	}
+	
+	void PrintScores(){
+		for(int it1=0;it1<10;it1++){
+			Debug.Log (it1.ToString()+": "+topScores[it1].name+" "+topScores[it1].val.ToString());
+		}
+	}
+	
+	public void CheckNewScore(){
+		if(topScores[9].val<score){
+			checkedTopTen=true;
 		}
 	}
 	
@@ -56,18 +93,17 @@ public class HighScoreScript : MonoBehaviour {
 		}
 	}
 	
-	void NewScore(HighScore newScore){
-		if(topScores[9].val<newScore.val){
-			topScores[9]=newScore;
-			askForName=true;
-		}
+	public void NewScore(HighScore newScore){
+		topScores[9]=newScore;
+		SortScores();
+		SaveScoresToPrefs();
 	}
 	
 	void SortScores(){
 		HighScore tempScore;
 		for(int it1=0;it1<10;it1++){
 			for(int it2=0;it2<9;it2++){
-				if(topScores[it1].val<topScores[it2].val){
+				if(topScores[it1].val>topScores[it2].val){
 					tempScore=topScores[it1];
 					topScores[it1]=topScores[it2];
 					topScores[it2]=tempScore;
