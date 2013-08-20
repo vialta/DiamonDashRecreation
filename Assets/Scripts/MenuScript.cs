@@ -6,19 +6,23 @@ public class MenuScript : MonoBehaviour {
 	public HighScoreScript highScoreScript;
 	
 	public enum menuScreen{
+		None,
 		MainMenu,
 		ScoreScreen
 	}
 	
-	public menuScreen menu=menuScreen.MainMenu;
+	public menuScreen menu=menuScreen.None;
 	
 	// Use this for initialization
 	void Start () {
 		InitialiseScripts();
+		menu=menuScreen.MainMenu;
 	}
 	
 	void OnGUI(){
 		switch(menu){
+		case (menuScreen.None):
+			break;
 		case (menuScreen.MainMenu):
 			MainMenuGUI();
 			break;
@@ -55,5 +59,9 @@ public class MenuScript : MonoBehaviour {
 			menu=menuScreen.MainMenu;	
 			highScoreScript.showScores=false;
 		}
+	}
+	
+	void ActivateState(){
+		
 	}
 }

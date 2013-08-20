@@ -10,14 +10,16 @@ public class HighScoreScript : MonoBehaviour {
 	
 	public GUIStyle labelStyle;
 	
-	public HighScore[] topScores;
-	public HighScore roundScore;
+	private HighScore[] topScores;
+	private HighScore roundScore;
 	
 	public bool askForName;
 	public bool submitted=false;
 	public bool checkedTopTen=false;
 	
 	public bool showScores=false;
+	
+	// # SINGLETON
 	
 	public static HighScoreScript getInstance(){
 		return instance;
@@ -43,9 +45,9 @@ public class HighScoreScript : MonoBehaviour {
 	
 	void OnGUI(){
 		if(askForName){
-			GUI.Box (new Rect(300,300,250,180),"");
-			roundScore.name = GUI.TextField(new Rect(325, 310, 200, 20), roundScore.name , 25);
-			if(GUI.Button (new Rect(450,350,80,50),"Submit")){
+			GUI.Box (new Rect(Screen.width/3,Screen.height/3,250,180),"");
+			roundScore.name = GUI.TextField(new Rect(Screen.width/3+30, Screen.height/3+20, 200, 20), roundScore.name , 25);
+			if(GUI.Button (new Rect(Screen.width/3+140,Screen.height/3+70,80,50),"Submit")){
 				roundScore.val=score;
 				NewScore(roundScore);
 				submitted=true;			
@@ -53,6 +55,13 @@ public class HighScoreScript : MonoBehaviour {
 		}
 		if(showScores){
 			ShowScores();
+		}
+	}
+	
+	// What's in the update methos is used to avoid a bug when exiting the menu while submitting a name to the highscore list
+	void Update(){
+		if(Application.loadedLevelName.Equals("MenuScene")){
+			askForName=false;
 		}
 	}
 	
