@@ -8,12 +8,16 @@ public class HighScoreScript : MonoBehaviour {
 	
 	public int score=0;
 	
+	public GUIStyle labelStyle;
+	
 	public HighScore[] topScores;
 	public HighScore roundScore;
 	
 	public bool askForName;
 	public bool submitted=false;
 	public bool checkedTopTen=false;
+	
+	public bool showScores=false;
 	
 	public static HighScoreScript getInstance(){
 		return instance;
@@ -46,6 +50,9 @@ public class HighScoreScript : MonoBehaviour {
 				NewScore(roundScore);
 				submitted=true;			
 			}
+		}
+		if(showScores){
+			ShowScores();
 		}
 	}
 	
@@ -105,7 +112,13 @@ public class HighScoreScript : MonoBehaviour {
 		}
 	}
 	
-	
+	void ShowScores(){
+		for(int it1=0;it1<10;it1++){
+			GUI.Label(new Rect(Screen.width/4,Screen.height/20*(it1+1)+15*it1,Screen.width / 3, Screen.height / 20),topScores[it1].name,labelStyle);
+			GUI.Label(new Rect(Screen.width/4*2,Screen.height/20*(it1+1)+15*it1,Screen.width / 3, Screen.height / 20),topScores[it1].val.ToString(),labelStyle);
+		}
+	}	
+
 }
 
 

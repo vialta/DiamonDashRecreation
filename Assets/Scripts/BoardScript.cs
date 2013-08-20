@@ -34,7 +34,6 @@ public class BoardScript : MonoBehaviour {
 	
 	void Awake(){
 		hintTimer = Time.time;
-		
 	}
 	
 	void Start () {
@@ -53,15 +52,7 @@ public class BoardScript : MonoBehaviour {
 		if(GUI.Button(new Rect(50,100,50,50),"Restart")){
 			RestartLevel();
 		}
-	}
-	
-	void UpdateTexts(){
-		timeGUIText.text=roundTimer.ToString("#");
-		scoreGUIText.text=highScoreScript.score.ToString();
-		if(timeUp){
-			gameOverGUIText.text="GAME OVER";
-		}
-	}
+	}	
 	
 	void Update () {
 		CheckForMovement();
@@ -111,6 +102,14 @@ public class BoardScript : MonoBehaviour {
 	void UpdateRoundTimer(){
 		roundTimer=roundSeconds-Time.timeSinceLevelLoad+standByTimer;
 		
+	}
+	
+	void UpdateTexts(){
+		timeGUIText.text=roundTimer.ToString("#");
+		scoreGUIText.text=highScoreScript.score.ToString();
+		if(timeUp){
+			gameOverGUIText.text="GAME OVER";
+		}
 	}
 	
 	bool CheckForNull(){
