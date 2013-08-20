@@ -37,22 +37,15 @@ public class HighScoreScript : MonoBehaviour {
 		}
 	}
 	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-	
 	void OnGUI(){
 		if(askForName){
-			roundScore.name = GUI.TextField(new Rect(400, 10, 200, 20), roundScore.name , 25);
-			if(GUI.Button (new Rect(450,50,80,50),"Submit")){
+			GUI.Box (new Rect(300,300,250,180),"");
+			roundScore.name = GUI.TextField(new Rect(325, 310, 200, 20), roundScore.name , 25);
+			if(GUI.Button (new Rect(450,350,80,50),"Submit")){
 				roundScore.val=score;
 				NewScore(roundScore);
 				submitted=true;			
 			}
-		}
-		if(GUI.Button(new Rect(150,50,50,50),"Scores")){
-			PrintScores();
 		}
 	}
 	

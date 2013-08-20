@@ -19,6 +19,10 @@ public class BoardScript : MonoBehaviour {
 	public bool timeUp=false;
 	public bool menuOn=true;
 	
+	public GUIText scoreGUIText;
+	public GUIText timeGUIText;
+	public GUIText gameOverGUIText;
+	
 	public float respawnPosition;
 	public float hintTimer;
 	public float scrambleTimer;
@@ -43,21 +47,25 @@ public class BoardScript : MonoBehaviour {
 	}
 	
 	void OnGUI(){
-		if(GUI.Button(new Rect(50,50,50,50),"Print")){
-			PrintBlocks();
+		if(GUI.Button(new Rect(50,50,50,50),"Menu")){
+			Application.LoadLevel("MenuScene");
 		}
 		if(GUI.Button(new Rect(50,100,50,50),"Restart")){
 			RestartLevel();
 		}
-		GUI.Label(new Rect(700,50,50,50),(roundTimer).ToString("#"));
-		GUI.Label (new Rect(700,100,50,50),highScoreScript.score.ToString());
+	}
+	
+	void UpdateTexts(){
+		timeGUIText.text=roundTimer.ToString("#");
+		scoreGUIText.text=highScoreScript.score.ToString();
 		if(timeUp){
-			GUI.Label(new Rect(400,350,100,100),"GAME OVER");
+			gameOverGUIText.text="GAME OVER";
 		}
 	}
 	
 	void Update () {
 		CheckForMovement();
+		UpdateTexts();
 		if(roundTimer>0){
 			UpdateHintArray();
 			if(Input.GetMouseButtonDown(0)){
